@@ -59,9 +59,16 @@ hex_rot_tform = 0.5*np.array([[        1 ,-np.sqrt(3),0],
 	 						       [np.sqrt(3),         1 ,0],
 	 						       [        0 ,         0 ,2]])
 
-def cubic_to_111(hex_radius,hex_height,cubic_nodes,cubic_frames):
+def cubic_to_111(hex_radius,hex_height,cubic_nodes,cubic_frames,offset):
+	# offset: sometimes the base 111 plane isnt at the origin but another
+	#         point within the unit cell. this 3x1 numpy array compensates
+	#         for that
+
+	#This part probably needs work. Finding maximum mat_matrix extents
+	#for a given hex_radius and hex_height
 	extents = np.max([hex_radius,hex_height])
 	mat_matrix = np.zeros((extents*4+4,extents*4+4,extents*4+4))
+	
 	#
 	#creation of the hex volume wireframe
 	#
@@ -101,8 +108,7 @@ def cubic_to_111(hex_radius,hex_height,cubic_nodes,cubic_frames):
 				  [11, 6]]
 
 
-
-	tot_cube_nodes = np.transpose(np.dot(tform111,np.copy(cubic_nodes).T))
+	tot_cube_nodes = np.dot(tform111,np.copy(cubic_nodes-offset).T).T
 	tot_cube_frames = np.copy(cubic_frames)
 
 	temptformframe = np.copy(cubic_frames)
@@ -110,25 +116,19 @@ def cubic_to_111(hex_radius,hex_height,cubic_nodes,cubic_frames):
 	for delx in range(-2*extents-1,2*extents+1):
 		for dely in range(-2*extents-1,2*extents+1):
 			for delz in range(-2*extents-1,2*extents+1):
-				tformcube = cubic_nodes+np.array([delx,dely,delz])-np.array([0.25,0.25,0.25])
+				tformcube = cubic_nodes+np.array([delx,dely,delz])-offset
 				tformcube = np.transpose(np.dot(tform111,np.transpose(tformcube)))
 				if in_hex_volume(np.copy(tformcube),hex_radius*hex_triangle_width,hex_height*hex_base_height):
 					tot_cube_nodes = np.append(tot_cube_nodes,tformcube,axis=0)
 					temptformframe = temptformframe + np.array([len(cubic_nodes),len(cubic_nodes)])
 					tot_cube_frames = np.append(tot_cube_frames,temptformframe,axis=0)
+					mat_matrix[delx+2*extents+1][dely+2*extents+1][delz+2*extents+1] = 1
 
-	#print(tot_cube_nodes)
-	#print(tot_cube_frames)
+	return [hex_nodes,hex_frames,tot_cube_nodes,tot_cube_frames],mat_matrix
 
-	#The cube is then transformed into the (111) coordinate system
-	#nodes = np.transpose(np.dot(tform111,np.transpose(cube)))
-
-	return hex_nodes,hex_frames,tot_cube_nodes,tot_cube_frames
-
-# Utility for checking 
-# if a given point (or set of points)
-# is contained within a hexagonal volume
-# with a given radius and height
+#
+# Utility for checking if a given point (or set of points) is 
+# contained within a hexagonal volume with a given radius and height
 # 
 def in_hex_volume(points,abs_hex_radius,abs_hex_height):
 	inhexvolume = True
@@ -160,8 +160,9 @@ cube_frames = np.array([[0,1],
 					    [0,2],
 					    [1,3],
 					    [2,3]])
+offset = np.array([0.25,0.25,0.25])
 
-hex_nodes, hex_frames, nodes, frames = cubic_to_111(1,1,cube_nodes,cube_frames)
+[hex_nodes, hex_frames, nodes, frames],material_matrix = cubic_to_111(1,1,cube_nodes,cube_frames,offset)
 
 #print(frames,np.shape(nodes))
 #Set up figure plotting
