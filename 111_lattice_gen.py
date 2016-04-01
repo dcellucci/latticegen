@@ -66,6 +66,7 @@ def cubic_to_111(hex_radius,hex_height,cubic_nodes,cubic_frames,offset):
 
 	#This part probably needs work. Finding maximum mat_matrix extents
 	#for a given hex_radius and hex_height
+
 	extents = np.max([hex_radius,hex_height])
 	mat_matrix = np.zeros((extents*4+4,extents*4+4,extents*4+4))
 	
@@ -109,6 +110,7 @@ def cubic_to_111(hex_radius,hex_height,cubic_nodes,cubic_frames,offset):
 
 
 	tot_cube_nodes = np.dot(tform111,np.copy(cubic_nodes-offset).T).T
+
 	tot_cube_frames = np.copy(cubic_frames)
 
 	temptformframe = np.copy(cubic_frames)
@@ -148,65 +150,69 @@ def in_hex_volume(points,abs_hex_radius,abs_hex_height):
 				points = np.transpose(np.dot(hex_rot_tform,np.transpose(points)))
 				if all(points.T[0] > factor*abs_hex_radius+correction) or all(points.T[0] < -factor*abs_hex_radius-correction):
 					inhexvolume = False
+
 	return inhexvolume
 
-# The cube defined in the cubic coordinate system.
-cube_nodes =  [[0.25,0.25,0.25], #0
-			   [0.25,0.75,0.75], #1
-			   [0.75,0.25,0.75], #2
-			   [0.75,0.75,0.25]] #3
-
-cube_frames = np.array([[0,1],
-					    [0,2],
-					    [1,3],
-					    [2,3]])
-offset = np.array([0.25,0.25,0.25])
-
-[hex_nodes, hex_frames, nodes, frames],material_matrix = cubic_to_111(1,1,cube_nodes,cube_frames,offset)
-
-#print(frames,np.shape(nodes))
-#Set up figure plotting
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-#nodes = np.array(nodes)
-xs = np.array(nodes.T[0])
-ys = np.array(nodes.T[1])
-zs = np.array(nodes.T[2])
-
-hxs = np.array(hex_nodes.T[0])
-hys = np.array(hex_nodes.T[1])
-hzs = np.array(hex_nodes.T[2])
-
-#This maintains proper aspect ratio for the 3d plot
-max_range = np.array([hxs.max()-hxs.min(), hys.max()-hys.min(), hzs.max()-hzs.min()]).max()
-Xb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() + 0.5*(hxs.max()+hxs.min())
-Yb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][1].flatten() + 0.5*(hys.max()+hys.min())
-Zb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + 0.5*(hzs.max()+hzs.min())
-# Comment or uncomment following both lines to test the fake bounding box:
-for xb, yb, zb in zip(Xb, Yb, Zb):
-   ax.plot([xb], [yb], [zb], 'w')
-
-#plot all of the frames
-for i,frame in enumerate(frames):
-		nid1 = int(frame[0])
-		nid2 = int(frame[1])
-		start = [xs[nid1],ys[nid1],zs[nid1]]
-		end   = [xs[nid2],ys[nid2],zs[nid2]]
-		ax.plot([start[0],end[0]],[start[1],end[1]],[start[2],end[2]],color='r', alpha=0.1)
-
-#plot all of the frames
-for i,frame in enumerate(hex_frames):
-		nid1 = int(frame[0])
-		nid2 = int(frame[1])
-		start = [hxs[nid1],hys[nid1],hzs[nid1]]
-		end   = [hxs[nid2],hys[nid2],hzs[nid2]]
-		ax.plot([start[0],end[0]],[start[1],end[1]],[start[2],end[2]],color='b', alpha=1.0)
 
 
-#plot the nodes
-ax.scatter(xs,ys,zs)
-ax.scatter(hxs,hys,hzs,color='r')
+if(debug):
+	# The cube defined in the cubic coordinate system.
+	cube_nodes =  [[0.25,0.25,0.25], #0
+				   [0.25,0.75,0.75], #1
+				   [0.75,0.25,0.75], #2
+				   [0.75,0.75,0.25]] #3
 
-#show it
-plt.show()
+	cube_frames = np.array([[0,1],
+						    [0,2],
+						    [1,3],
+						    [2,3]])
+	offset = np.array([0.25,0.25,0.25])
+
+	[hex_nodes, hex_frames, nodes, frames],material_matrix = cubic_to_111(1,1,cube_nodes,cube_frames,offset)
+
+	#print(frames,np.shape(nodes))
+	#Set up figure plotting
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection='3d')
+
+	#nodes = np.array(nodes)
+	xs = np.array(nodes.T[0])
+	ys = np.array(nodes.T[1])
+	zs = np.array(nodes.T[2])
+
+	hxs = np.array(hex_nodes.T[0])
+	hys = np.array(hex_nodes.T[1])
+	hzs = np.array(hex_nodes.T[2])
+
+	#This maintains proper aspect ratio for the 3d plot
+	max_range = np.array([hxs.max()-hxs.min(), hys.max()-hys.min(), hzs.max()-hzs.min()]).max()
+	Xb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() + 0.5*(hxs.max()+hxs.min())
+	Yb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][1].flatten() + 0.5*(hys.max()+hys.min())
+	Zb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + 0.5*(hzs.max()+hzs.min())
+	# Comment or uncomment following both lines to test the fake bounding box:
+	for xb, yb, zb in zip(Xb, Yb, Zb):
+	   ax.plot([xb], [yb], [zb], 'w')
+
+	#plot all of the frames
+	for i,frame in enumerate(frames):
+			nid1 = int(frame[0])
+			nid2 = int(frame[1])
+			start = [xs[nid1],ys[nid1],zs[nid1]]
+			end   = [xs[nid2],ys[nid2],zs[nid2]]
+			ax.plot([start[0],end[0]],[start[1],end[1]],[start[2],end[2]],color='r', alpha=0.1)
+
+	#plot all of the frames
+	for i,frame in enumerate(hex_frames):
+			nid1 = int(frame[0])
+			nid2 = int(frame[1])
+			start = [hxs[nid1],hys[nid1],hzs[nid1]]
+			end   = [hxs[nid2],hys[nid2],hzs[nid2]]
+			ax.plot([start[0],end[0]],[start[1],end[1]],[start[2],end[2]],color='b', alpha=1.0)
+
+
+	#plot the nodes
+	ax.scatter(xs,ys,zs)
+	ax.scatter(hxs,hys,hzs,color='r')
+
+	#show it
+	plt.show()
