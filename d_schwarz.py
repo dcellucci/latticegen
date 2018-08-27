@@ -1,5 +1,5 @@
-from stl import mesh
 import numpy as np
+from stl import mesh
 import math
 
 
@@ -101,7 +101,7 @@ def node(beam_width, chamfer_factor, side_code):
 	
 
 	for i in range(0,12,2):
-		if side_code[i/2] == 1:
+		if side_code[int(i/2)] == 1:
 			side['vectors'][i] = np.vstack((botbound[i-1],botbound[i],topbound[i]))
 			side['vectors'][i+1]= np.vstack((topbound[i],topbound[i-1],botbound[i-1]))
 

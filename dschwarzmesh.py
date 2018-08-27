@@ -1,9 +1,13 @@
+import numpy as np
 import stl
 from stl import mesh
-import numpy as np
 import math
-from pfea.geom import dschwarz
+#from pfea.geom import dschwarz
 
+
+#Mapping between node sides in the base node
+#and the transformed. Ensures that there are no
+#holes in the final mesh
 
 siderefnode0 = [[( 0, 0, 0),2],
 				[( 0, 0, 0),1],
@@ -33,6 +37,9 @@ siderefnode3 = [[( 0, 0, 0),1],
 				[( 0, 1,-1),2],
 				[( 0, 1, 0),0]]
 
+#Beam reference for each node in the unit cell
+#in order to ensure that there are no hanging beams
+
 beamrefnode0 = [[( 0, 0, 0),1],
 				[( 0,-1, 0),3],
 				[(-1, 0,-1),2],
@@ -58,17 +65,6 @@ beamrefnode2 = [[( 0, 0, 0),-1],
 rot_60_tform = np.array([[0.5, -0.5*math.sqrt(3), 0.0],
 						 [0.5*math.sqrt(3), 0.5, 0.0],
 						 [0.0, 0.0, 1.0]])
-
-def align_points(meshobj,threshold):
-	allvec = meshobj.vectors
-	for fi, face in enumerate(allvec):
-		for vi,vector in enumerate(face):
-			for ofi,otherface in enumerate(allvec):
-				if ofi != fi:
-					for ovi, othervector in enumerate(otherface):
-						if np.linalg.norm(othervector-vector) < thresh:
-							meshobj.vectors[fi][vi] = (othervector+vector)/2.0
-							meshobj.vectors[ofi][ovi] = (othervector+vector)/2.0
 
 
 def scale(meshobj,factor):
@@ -148,7 +144,7 @@ def node(beam_width, chamfer_factor, side_code):
 	
 
 	for i in range(0,12,2):
-		if side_code[i/2] == 1:
+		if side_code[int(i/2)] == 1:
 			side['vectors'][i] = np.vstack((botbound[i-1],botbound[i],topbound[i]))
 			side['vectors'][i+1]= np.vstack((topbound[i],topbound[i-1],botbound[i-1]))
 
@@ -208,19 +204,22 @@ def pitch_from_relden(relden, cf, sw):
 
 
 
-strut_width = 0.6 #mm
+strut_width = 1 #mm
+min_width = strut_width
+strut_width = strut_width/0.8167#/0.6504
 cham_factor = 0.3
 relative_density = 0.1
 lattice_pitch = pitch_from_relden(relative_density,cham_factor,strut_width)
-print(lattice_pitch)
 unit_cell = lattice_pitch*np.sqrt(2)
 thresh = 0.01 
+size = 12
+print(unit_cell*(size-2))
+
 
 
 mat_matrix = np.zeros((3,3,3))
 mat_matrix[1][1][1] = 1
-size = 10
-invol = np.zeros((36,36,36,4))#dschwarz.gen_111_invol(6,32,lattice_pitch)#np.zeros((size,size,size,4))
+invol = np.zeros((size,size,size,4))#dschwarz.gen_111_invol(6,32,lattice_pitch)#np.zeros((size,size,size,4))
 
 meshes = []
 
@@ -316,11 +315,12 @@ for ucmeshes in meshes:
 latticedata = np.concatenate(latticedata)
 latticedata = stl.mesh.Mesh(latticedata)
 
-latticedata.rotate([0.0,0.0,1.0],math.radians(45))
-latticedata.rotate([0.0,1.0,0.0],math.atan(np.sqrt(2)))
+# Perform a rotation to orient it so that (111) aligns with (001)
+#latticedata.rotate([0.0,0.0,1.0],math.radians(45))
+#latticedata.rotate([0.0,1.0,0.0],math.atan(np.sqrt(2)))
 
-latticedata.save('3_3_hex_dsch_0.01.stl')
 #align_points(latticedata,thresh)
+#latticedata.save('{0}_{0}_{0}_dsch_{1}rd_{2}sw.stl'.format(size-2,relative_density,min_width))
 
 
 '''
